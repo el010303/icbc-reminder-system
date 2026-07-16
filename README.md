@@ -19,7 +19,7 @@ A production-grade backend reliability infrastructure built on top of ICBC's ent
 - Redis cache with 60-second TTL, manual refresh endpoint
 
 ### 2. Email Reliability Engineering
-- Automated retry system with exponential backoff
+- Automated retry system (max 3 attempts, 30s interval)
 - Idempotency guarantee via unique keys (INSERT IGNORE)
 - Real email delivery via Gmail SMTP (JavaMailSender)
 - Maximum 3 retry attempts before marking as FAILED
@@ -45,6 +45,12 @@ A production-grade backend reliability infrastructure built on top of ICBC's ent
 - 6 unit tests with Mockito mocking
 - Tests cover cache hit/miss, retry logic, failure recording
 - Zero dependencies on external services in tests
+
+### 7. API Key Authentication
+- Custom Spring Security filter chain for all endpoints
+- API key injected via environment variable (not hardcoded)
+- Swagger UI excluded from authentication requirement
+- Returns 401 with JSON error message for invalid/missing keys
 
 ## API Endpoints
 
@@ -72,6 +78,15 @@ Full API documentation available at `/swagger-ui.html`
 
 ```bash
 ./mvnw spring-boot:run
+```
+### Environment Variables
+```bash
+export API_KEY=your-api-key-here
+```
+
+### Calling the API
+```bash
+curl -H "X-API-KEY: your-api-key" http://localhost:8080/dashboard/stats
 ```
 
 ## Architecture
