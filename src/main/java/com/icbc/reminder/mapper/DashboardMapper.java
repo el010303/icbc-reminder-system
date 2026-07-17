@@ -25,8 +25,8 @@ public interface DashboardMapper {
     int getMonthlyNewReminders();
 
     @Select("SELECT CASE WHEN COUNT(*) = 0 THEN 0 " +
-        "ELSE ROUND(SUM(CASE WHEN result = 'SUCCESS' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) END " +
-        "FROM audit_log WHERE action LIKE 'EMAIL_RETRY%'")
+        "ELSE ROUND(SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) END " +
+        "FROM email_retry_log")
     double getSendSuccessRate();
 
     @Select("SELECT COUNT(*) FROM email_retry_log WHERE status = 'FAILED'")
