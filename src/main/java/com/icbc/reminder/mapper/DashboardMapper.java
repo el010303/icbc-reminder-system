@@ -24,7 +24,9 @@ public interface DashboardMapper {
     @Select("SELECT COUNT(*) FROM tjfh_INM_REMIND WHERE DATE_FORMAT(COMMIT_DATE, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')")
     int getMonthlyNewReminders();
 
-    @Select("SELECT CASE WHEN COUNT(*) = 0 THEN 0 ELSE ROUND(SUM(CASE WHEN send_result IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) END FROM tjfh_INM_REMIND_LIST WHERE send_times > 0")
+    @Select("SELECT CASE WHEN COUNT(*) = 0 THEN 0 " +
+        "ELSE ROUND(SUM(CASE WHEN result = 'SUCCESS' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) END " +
+        "FROM audit_log WHERE action LIKE 'EMAIL_RETRY%'")
     double getSendSuccessRate();
 
     @Select("SELECT COUNT(*) FROM email_retry_log WHERE status = 'FAILED'")
