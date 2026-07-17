@@ -52,6 +52,13 @@ A production-grade backend reliability infrastructure built on top of ICBC's ent
 - Swagger UI excluded from authentication requirement
 - Returns 401 with JSON error message for invalid/missing keys
 
+### 8. Frontend Dashboard
+- Single-page monitoring dashboard built with vanilla HTML/JavaScript
+- Real-time data display with auto-refresh every 30 seconds
+- Email retry test feature: trigger test emails directly from browser
+- No additional frontend framework required
+- Access at `http://localhost:8080`
+
 ## API Endpoints
 
 | Method | Endpoint | Description |
@@ -61,6 +68,16 @@ A production-grade backend reliability infrastructure built on top of ICBC's ent
 | GET | /audit/logs | Get recent 100 audit log entries |
 
 Full API documentation available at `/swagger-ui.html`
+
+## Frontend
+
+Access the monitoring dashboard at `http://localhost:8080`
+
+Features:
+- Real-time system metrics display
+- Audit log viewer
+- Email retry test (trigger test emails from browser)
+- Cache refresh button
 
 ## Getting Started
 
