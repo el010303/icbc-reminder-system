@@ -2,6 +2,8 @@ package com.icbc.reminder.service;
 
 import com.icbc.reminder.mapper.EmailRetryMapper;
 import com.icbc.reminder.model.EmailRetryLog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -12,6 +14,8 @@ import java.util.List;
 
 @Service
 public class EmailRetryService {
+    private static final Logger logger = LoggerFactory.getLogger(EmailRetryService.class);
+
     @Autowired
     EmailRetryMapper emailRetryMapper;
 
@@ -36,13 +40,14 @@ public class EmailRetryService {
         emailRetryMapper.insertRetryLog(log);
     }
 
-    @Scheduled(fixedDelay = 30000) // Retry every 5 mins
+    // Runs 30 seconds after the previous run finishes (fixedDelay, so runs never overlap)
+    @Scheduled(fixedDelay = 30000)
     public void retryFailedEmails() {
         List<EmailRetryLog> pendingList = emailRetryMapper.findPendingRetries();
 
         for (EmailRetryLog log : pendingList) {
             try{
-                simulateSendEmail(log.getEmail(), log.getTitle());
+                sendReminderEmail(log.getEmail(), log.getTitle());
                 log.setStatus("SUCCESS");
                 log.setLastRetryTime(LocalDateTime.now().format(formatter));
                 emailRetryMapper.updateRetryLog(log);
@@ -57,12 +62,14 @@ public class EmailRetryService {
                     log.setStatus("PENDING");
                 }
                 emailRetryMapper.updateRetryLog(log);
+                logger.warn("Email retry failed for log id={} (attempt {}/{}): {}",
+                        log.getId(), log.getRetryCount(), MAX_RETRY_COUNT, e.getMessage());
                 auditLogService.log("SYSTEM", "EMAIL_RETRY_FAILED", log.getId().toString(), "EMAIL_RETRY", "重新发送失败，第" + log.getRetryCount() + "次尝试：" + e.getMessage(), "FAILED");
             }
         }
     }
 
-    private void simulateSendEmail(String email, String title) {
+    private void sendReminderEmail(String email, String title) {
         emailService.sendEmail(email, title, "这是来自 ICBC 重要事项提醒系统的提醒邮件");
     }
 

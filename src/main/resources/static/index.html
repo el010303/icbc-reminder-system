@@ -193,8 +193,27 @@
 </div>
 
 <script>
-    const API_KEY = 'icbc-reminder-2026';
-    const headers = { 'X-API-KEY': API_KEY, 'Content-Type': 'application/json' };
+    // The API key is never stored in source code. It is entered once per browser
+    // session and kept in sessionStorage (cleared when the tab closes).
+    function getApiKey() {
+        let key = null;
+        try { key = sessionStorage.getItem('apiKey'); } catch (e) {}
+        if (!key) {
+            key = prompt('请输入 API Key（与服务端 API_KEY 环境变量一致）') || '';
+            try { sessionStorage.setItem('apiKey', key); } catch (e) {}
+        }
+        return key;
+    }
+    const headers = { 'X-API-KEY': getApiKey(), 'Content-Type': 'application/json' };
+
+    // Escape every server-provided value before inserting it into HTML.
+    // Audit-log details contain user-supplied input (e.g. the test email address),
+    // so rendering them raw would allow stored XSS.
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[c]);
+    }
 
     // 统计标签中文映射
     const labelMap = {
@@ -211,6 +230,10 @@
     async function loadStats() {
         try {
             const res = await fetch('/dashboard/stats', { headers });
+            if (res.status === 401) {
+                try { sessionStorage.removeItem('apiKey'); } catch (e) {}
+                throw new Error('API Key 无效，请刷新页面重新输入');
+            }
             const data = await res.json();
             
             const grid = document.getElementById('statsGrid');
@@ -221,8 +244,8 @@
                 const displayValue = key === 'sendSuccessRate' ? value + '%' : value;
                 grid.innerHTML += `
                     <div class="stat-card">
-                        <div class="number">${displayValue}</div>
-                        <div class="label">${label}</div>
+                        <div class="number">${escapeHtml(displayValue)}</div>
+                        <div class="label">${escapeHtml(label)}</div>
                     </div>`;
             }
             
@@ -230,13 +253,13 @@
                 '上次刷新：' + new Date().toLocaleTimeString();
         } catch (e) {
             document.getElementById('statsGrid').innerHTML = 
-                '<div style="color:red">加载失败：' + e.message + '</div>';
+                '<div style="color:red">加载失败：' + escapeHtml(e.message) + '</div>';
         }
     }
 
     async function refreshCache() {
         try {
-            const res = await fetch('/dashboard/refresh', { headers });
+            const res = await fetch('/dashboard/refresh', { method: 'POST', headers });
             const text = await res.text();
             alert('缓存已清除，数据将重新从数据库加载');
             loadStats();
@@ -258,17 +281,17 @@
             
             tbody.innerHTML = logs.map(log => `
                 <tr>
-                    <td>${log.id}</td>
-                    <td>${log.operator || '-'}</td>
-                    <td>${log.action || '-'}</td>
-                    <td>${log.targetType || '-'}</td>
-                    <td>${log.detail || '-'}</td>
-                    <td class="status-${(log.result || '').toLowerCase()}">${log.result || '-'}</td>
-                    <td>${log.createTime || '-'}</td>
+                    <td>${escapeHtml(log.id)}</td>
+                    <td>${escapeHtml(log.operator || '-')}</td>
+                    <td>${escapeHtml(log.action || '-')}</td>
+                    <td>${escapeHtml(log.targetType || '-')}</td>
+                    <td>${escapeHtml(log.detail || '-')}</td>
+                    <td class="status-${escapeHtml((log.result || '').toLowerCase())}">${escapeHtml(log.result || '-')}</td>
+                    <td>${escapeHtml(log.createTime || '-')}</td>
                 </tr>`).join('');
         } catch (e) {
             document.getElementById('auditLogTable').innerHTML = 
-                '<tr><td colspan="7" style="color:red">加载失败：' + e.message + '</td></tr>';
+                '<tr><td colspan="7" style="color:red">加载失败：' + escapeHtml(e.message) + '</td></tr>';
         }
     }
 
@@ -290,13 +313,13 @@
             });
             
             if (res.ok) {
-                resultDiv.innerHTML = '<div class="alert alert-success">✅ 测试邮件已加入重试队列，30秒内将发送到 ' + email + '</div>';
+                resultDiv.innerHTML = '<div class="alert alert-success">✅ 测试邮件已加入重试队列，30秒内将发送到 ' + escapeHtml(email) + '</div>';
                 setTimeout(loadAuditLogs, 5000);
             } else {
                 resultDiv.innerHTML = '<div class="alert alert-error">❌ 操作失败</div>';
             }
         } catch (e) {
-            resultDiv.innerHTML = '<div class="alert alert-error">❌ 错误：' + e.message + '</div>';
+            resultDiv.innerHTML = '<div class="alert alert-error">❌ 错误：' + escapeHtml(e.message) + '</div>';
         }
     }
 

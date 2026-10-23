@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 @Component
 public class ApiKeyFilter extends OncePerRequestFilter {
@@ -32,7 +34,11 @@ public class ApiKeyFilter extends OncePerRequestFilter {
 
         String requestApiKey = request.getHeader("X-API-KEY");
 
-        if(apiKey.equals(requestApiKey)) {
+        // Constant-time comparison: String.equals returns early on the first mismatched
+        // character, which leaks how much of a guessed key is correct (timing attack).
+        if (requestApiKey != null && MessageDigest.isEqual(
+                apiKey.getBytes(StandardCharsets.UTF_8),
+                requestApiKey.getBytes(StandardCharsets.UTF_8))) {
             filterChain.doFilter(request, response);
         } else {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

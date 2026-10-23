@@ -1,5 +1,7 @@
 package com.icbc.reminder.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
+    private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
     
     @Autowired
     JavaMailSender mailSender;
@@ -22,7 +25,7 @@ public class EmailService {
         message.setSubject(subject);
         message.setText(content);
         mailSender.send(message);
-        System.out.println("邮件发送成功：" + toEmail);
+        logger.info("Email sent to {}", toEmail);
     }
 }
 

@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,7 +26,9 @@ public class DashboardController {
         return dashboardCacheService.getStats();
     }
 
-    @GetMapping("/refresh")
+    // POST, not GET: invalidating the cache is a state change, and GET requests
+    // can be repeated by browsers, prefetchers and crawlers.
+    @PostMapping("/refresh")
     @Operation(summary = "刷新缓存", description = "清除缓存, 下次请求将从数据库重新加载")
     public String refreshCache() {
         dashboardCacheService.clearCache();

@@ -1,6 +1,8 @@
 package com.icbc.reminder.service;
 
 import com.icbc.reminder.model.DashboardStats;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -9,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class DashboardCacheService {
+    private static final Logger logger = LoggerFactory.getLogger(DashboardCacheService.class);
 
     @Autowired
     RedisTemplate<String, Object> redisTemplate;
@@ -22,10 +25,10 @@ public class DashboardCacheService {
     public DashboardStats getStats(){
         DashboardStats cached = (DashboardStats) redisTemplate.opsForValue().get(CACHE_KEY);
         if (cached != null) {
-            System.out.println("从Redis缓存读取数据");
+            logger.debug("Dashboard stats served from Redis cache");
             return cached;
         }
-        System.out.println("从数据库读取数据,并写入redis缓存");
+        logger.debug("Cache miss: loading dashboard stats from MySQL");
         DashboardStats stats = dashboardService.getStats();
         redisTemplate.opsForValue().set(CACHE_KEY, stats, CACHE_TTL, TimeUnit.SECONDS);
         return stats;
@@ -33,6 +36,6 @@ public class DashboardCacheService {
 
     public void clearCache() {
         redisTemplate.delete(CACHE_KEY);
-        System.out.println("已清除Redis缓存");
+        logger.info("Dashboard stats cache cleared");
     }
 }
