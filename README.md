@@ -105,7 +105,7 @@ export API_KEY=your-api-key-here
 
 ### Running Tests
 ```bash
-./mvnw test
+./mvnw test   # 11 unit tests; the context test is skipped (needs MySQL + Redis)
 ```
 
 ### Calling the API
